@@ -54,8 +54,9 @@ async function bootstrap() {
     // Garante a nutricionista padrão (idempotente). Não derruba o boot se falhar.
     await ensureDefaultNutritionist().catch((e) => console.error('[seed] Falha ao criar nutri padrão:', e.message));
 
-    server.listen(env.PORT, () => {
-      console.log(`[http] API a correr em http://localhost:${env.PORT}${env.API_PREFIX}`);
+    // Bind explícito em 0.0.0.0 para aceitar conexões do proxy (EasyPanel/Docker).
+    server.listen(env.PORT, '0.0.0.0', () => {
+      console.log(`[http] API ouvindo em 0.0.0.0:${env.PORT}${env.API_PREFIX} (NODE_ENV=${env.NODE_ENV})`);
     });
   } catch (err) {
     console.error('[boot] Falha ao iniciar a aplicação:', err);

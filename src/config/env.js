@@ -20,7 +20,8 @@ function bool(value, fallback = false) {
 
 const env = {
   NODE_ENV: process.env.NODE_ENV || 'development',
-  PORT: Number(process.env.PORT || 3000),
+  // Number('0') é truthy via string mas inválido como porta; Number()||3000 evita PORT=0.
+  PORT: Number(process.env.PORT) || 3000,
   API_PREFIX: process.env.API_PREFIX || '/api/v1',
   CORS_ORIGIN: process.env.CORS_ORIGIN || '*',
 
