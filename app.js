@@ -1,0 +1,64 @@
+// app.js — ponto de entrada da aplicação.
+// Responsabilidade única: carregar env, instanciar Express, middlewares globais,
+// montar rotas, registrar handler de erro e iniciar o servidor (HTTP + WebSocket).
+require('dotenv').config();
+
+const http = require('http');
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const morgan = require('morgan');
+
+const env = require('./src/config/env');
+const routes = require('./src/routes');
+const errorHandler = require('./src/middlewares/error.middleware');
+const notFoundHandler = require('./src/middlewares/not-found.middleware');
+const { initSocket } = require('./src/providers/websocket/socket-server');
+const { sequelize } = require('./src/models');
+const { ensureDefaultNutritionist } = require('./src/bootstrap/ensure-default-user');
+
+const app = express();
+
+// --- Middlewares globais ---
+app.use(helmet());
+app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true }));
+if (env.NODE_ENV !== 'test') {
+  app.use(morgan(env.NODE_ENV === 'production' ? 'combined' : 'dev'));
+}
+
+// --- Montagem das rotas versionadas (prefixo configurável) ---
+app.use(env.API_PREFIX, routes);
+
+// --- 404 e handler de erro global (sempre por último) ---
+app.use(notFoundHandler);
+app.use(errorHandler);
+
+// --- Servidor HTTP + Socket.io ---
+const server = http.createServer(app);
+initSocket(server);
+
+async function bootstrap() {
+  try {
+    await sequelize.authenticate();
+    console.log('[db] Conexão com PostgreSQL estabelecida.');
+
+    // Garante a nutricionista padrão (idempotente). Não derruba o boot se falhar.
+    await ensureDefaultNutritionist().catch((e) => console.error('[seed] Falha ao criar nutri padrão:', e.message));
+
+    server.listen(env.PORT, () => {
+      console.log(`[http] API a correr em http://localhost:${env.PORT}${env.API_PREFIX}`);
+    });
+  } catch (err) {
+    console.error('[boot] Falha ao iniciar a aplicação:', err);
+    process.exit(1);
+  }
+}
+
+// Só faz bootstrap se executado diretamente (permite importar app em testes).
+if (require.main === module) {
+  bootstrap();
+}
+
+module.exports = { app, server, bootstrap };
