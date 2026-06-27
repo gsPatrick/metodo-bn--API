@@ -44,6 +44,13 @@ async function bootstrap() {
     await sequelize.authenticate();
     console.log('[db] Conexão com PostgreSQL estabelecida.');
 
+    // Cria/ajusta o schema automaticamente a partir dos models (sem migrations).
+    // DB_SYNC: 'off' | 'create' | 'alter' (padrão) | 'force' (DROPA tudo!).
+    if (env.DB_SYNC && env.DB_SYNC !== 'off') {
+      await sequelize.sync({ alter: env.DB_SYNC === 'alter', force: env.DB_SYNC === 'force' });
+      console.log(`[db] Schema sincronizado (DB_SYNC=${env.DB_SYNC}).`);
+    }
+
     // Garante a nutricionista padrão (idempotente). Não derruba o boot se falhar.
     await ensureDefaultNutritionist().catch((e) => console.error('[seed] Falha ao criar nutri padrão:', e.message));
 

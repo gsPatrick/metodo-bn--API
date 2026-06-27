@@ -32,6 +32,9 @@ const env = {
   DB_USER: process.env.DB_USER || 'postgres',
   DB_PASSWORD: process.env.DB_PASSWORD || '',
   DB_SSL: bool(process.env.DB_SSL, false),
+  // Cria/ajusta o schema no boot a partir dos models (sem migrations).
+  // 'off' | 'create' | 'alter' (padrão) | 'force' (DROPA tudo!).
+  DB_SYNC: process.env.DB_SYNC || 'alter',
 
   // Auth
   JWT_SECRET: required('JWT_SECRET') || 'dev-insecure-secret',
