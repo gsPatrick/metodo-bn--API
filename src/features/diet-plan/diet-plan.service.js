@@ -58,7 +58,10 @@ async function enrichProfileForCalc(profile) {
 // Carrega o plano e valida acesso conforme o papel.
 async function loadPlanForActor(actor, id, { includeMeals = true } = {}) {
   const include = includeMeals
-    ? [{ model: Meal, as: 'meals', include: [{ model: MealItem, as: 'items', include: [{ model: Food, as: 'food' }] }] }]
+    ? [
+        { model: Meal, as: 'meals', include: [{ model: MealItem, as: 'items', include: [{ model: Food, as: 'food' }] }] },
+        { model: Recipe, as: 'recipes' },
+      ]
     : [];
   const plan = await DietPlan.findByPk(id, {
     include: [{ model: PatientProfile, as: 'patient' }, ...include],
