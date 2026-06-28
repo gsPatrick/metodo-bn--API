@@ -86,6 +86,13 @@ const env = {
 
   // Google Maps / Places (busca do mercado mais próximo).
   GOOGLE_MAPS_API_KEY: process.env.GOOGLE_MAPS_API_KEY || '',
+
+  // Cloudflare R2 (storage de anexos do chat — S3-compatível).
+  R2_ENDPOINT: process.env.R2_ENDPOINT || '', // https://<accountid>.r2.cloudflarestorage.com
+  R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID || '',
+  R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY || '',
+  R2_BUCKET: process.env.R2_BUCKET || '',
+  R2_PUBLIC_URL: process.env.R2_PUBLIC_URL || '', // URL pública do bucket (r2.dev ou domínio custom)
 };
 
 module.exports = env;

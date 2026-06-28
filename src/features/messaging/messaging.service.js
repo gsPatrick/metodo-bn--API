@@ -7,6 +7,7 @@ const AppError = require('../../utils/app-error');
 const { ROLES, MESSAGE_TYPES, NOTIFICATION_TYPES } = require('../../config/constants');
 const { emitToUser } = require('../../providers/websocket/socket-server');
 const notificationService = require('../notification/notification.service');
+const storage = require('../../providers/storage/r2');
 
 async function loadConversation(id) {
   const conv = await Conversation.findByPk(id, {
@@ -95,12 +96,24 @@ async function sendMessage(actor, conversationId, { type = 'text', body, attachm
   if (type === MESSAGE_TYPES.TEXT && !(body && body.trim())) throw AppError.badRequest('Mensagem vazia.', 'EMPTY_MESSAGE');
   if (type !== MESSAGE_TYPES.TEXT && !attachmentUrl) throw AppError.badRequest('Anexo obrigatório.', 'MISSING_ATTACHMENT');
 
+  // Se o anexo veio como base64 e o R2 está configurado, sobe para o storage e
+  // guarda só a URL pública (em vez de inchar o banco com o base64).
+  let finalAttachmentUrl = attachmentUrl || null;
+  if (finalAttachmentUrl && finalAttachmentUrl.startsWith('data:') && storage.isEnabled()) {
+    try {
+      const uploaded = await storage.uploadDataUrl(finalAttachmentUrl, `chat/${conversationId}`);
+      if (uploaded) finalAttachmentUrl = uploaded;
+    } catch (e) {
+      console.error('[messaging] upload R2 falhou, mantendo base64:', e.message);
+    }
+  }
+
   const message = await Message.create({
     conversationId,
     senderId: actor.id,
     type,
     body: body || null,
-    attachmentUrl: attachmentUrl || null,
+    attachmentUrl: finalAttachmentUrl,
     attachmentName: attachmentName || null,
     attachmentSize: attachmentSize || null,
     durationSec: durationSec || null,
