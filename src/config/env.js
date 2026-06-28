@@ -87,8 +87,9 @@ const env = {
   // Google Maps / Places (busca do mercado mais próximo).
   GOOGLE_MAPS_API_KEY: process.env.GOOGLE_MAPS_API_KEY || '',
 
-  // Cloudflare R2 (storage de anexos do chat — S3-compatível).
-  R2_ENDPOINT: process.env.R2_ENDPOINT || '', // https://<accountid>.r2.cloudflarestorage.com
+  // Storage de anexos do chat — S3-compatível (Cloudflare R2, Supabase, B2, etc.).
+  R2_ENDPOINT: process.env.R2_ENDPOINT || '', // R2: https://<accountid>.r2.cloudflarestorage.com
+  R2_REGION: process.env.R2_REGION || 'auto', // R2='auto'; Supabase/B2 = região do projeto
   R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID || '',
   R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY || '',
   R2_BUCKET: process.env.R2_BUCKET || '',

@@ -9,7 +9,8 @@ function getClient() {
   if (client) return client;
   const { S3Client } = require('@aws-sdk/client-s3');
   client = new S3Client({
-    region: 'auto',
+    region: env.R2_REGION || 'auto', // R2 = 'auto'; Supabase/B2 = região do projeto
+    forcePathStyle: true, // compatível com Supabase/MinIO
     endpoint: env.R2_ENDPOINT,
     credentials: {
       accessKeyId: env.R2_ACCESS_KEY_ID,
