@@ -114,18 +114,30 @@ async function provisionPatient(actor, { name, email, password, phone, profile =
   if (actor.role !== ROLES.NUTRITIONIST && !isAdmin(actor)) {
     throw AppError.forbidden('Apenas nutricionistas podem provisionar pacientes.', 'NOT_NUTRITIONIST');
   }
-  if (!name || !email) {
-    throw AppError.badRequest('name e email são obrigatórios.', 'MISSING_FIELDS');
+  if (!name) {
+    throw AppError.badRequest('name é obrigatório.', 'MISSING_FIELDS');
   }
-  const exists = await User.findOne({ where: { email } });
-  if (exists) throw AppError.conflict('E-mail já cadastrado.', 'EMAIL_TAKEN');
+  // Email e telefone são opcionais, mas ao menos um identifica a conta.
+  const cleanEmail = email ? String(email).trim().toLowerCase() : null;
+  const cleanPhone = phone ? String(phone).replace(/\D/g, '') : null;
+  if (!cleanEmail && !cleanPhone) {
+    throw AppError.badRequest('Informe e-mail ou telefone.', 'MISSING_CONTACT');
+  }
+  if (cleanEmail) {
+    const e = await User.findOne({ where: { email: cleanEmail } });
+    if (e) throw AppError.conflict('E-mail já cadastrado.', 'EMAIL_TAKEN');
+  }
+  if (cleanPhone) {
+    const p = await User.findOne({ where: { phone: cleanPhone } });
+    if (p) throw AppError.conflict('Telefone já cadastrado.', 'PHONE_TAKEN');
+  }
 
   // Senha temporária gerada se não informada (paciente troca no 1º acesso).
   const tempPassword = password || crypto.randomBytes(6).toString('base64url');
   const nutritionistId = actor.id;
 
   const result = await sequelize.transaction(async (t) => {
-    const user = User.build({ name, email, phone, role: ROLES.PATIENT });
+    const user = User.build({ name, email: cleanEmail, phone: cleanPhone, role: ROLES.PATIENT });
     await user.setPassword(tempPassword);
     await user.save({ transaction: t });
 
@@ -160,10 +172,12 @@ async function provisionPatient(actor, { name, email, password, phone, profile =
     return { user, profile: createdProfile };
   });
 
-  // Convite por e-mail com as credenciais temporárias (best effort).
-  await mailer
-    .sendPatientInvite(result.user, { nutritionistName: actor.name, tempPassword })
-    .catch((e) => console.error('[user] invite email', e));
+  // Convite por e-mail com as credenciais temporárias (best effort) — só se houver e-mail.
+  if (cleanEmail) {
+    await mailer
+      .sendPatientInvite(result.user, { nutritionistName: actor.name, tempPassword })
+      .catch((e) => console.error('[user] invite email', e));
+  }
 
   const full = await getUserById(actor, result.user.id);
   // Devolve a senha temporária apenas se foi gerada automaticamente (sem e-mail garantido).

@@ -71,12 +71,15 @@ async function register({ name, email, password, role, phone }, context = {}) {
 }
 
 // -------------------------------------------------------------------- login
-async function login({ email, password }, context = {}) {
-  if (!email || !password) {
-    throw AppError.badRequest('email e password são obrigatórios.', 'MISSING_FIELDS');
+async function login({ email, phone, identifier, password }, context = {}) {
+  // Identificador pode ser e-mail OU telefone.
+  const raw = (identifier || email || phone || '').toString().trim();
+  if (!raw || !password) {
+    throw AppError.badRequest('Informe e-mail ou telefone e a senha.', 'MISSING_FIELDS');
   }
+  const where = raw.includes('@') ? { email: raw.toLowerCase() } : { phone: raw.replace(/\D/g, '') };
 
-  const user = await User.scope('withPassword').findOne({ where: { email } });
+  const user = await User.scope('withPassword').findOne({ where });
   if (!user || !user.isActive) {
     throw AppError.unauthorized('Credenciais inválidas.', 'INVALID_CREDENTIALS');
   }

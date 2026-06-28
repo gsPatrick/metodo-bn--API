@@ -15,9 +15,10 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING(150),
         allowNull: false,
       },
+      // Email OU telefone identificam a conta — ambos opcionais, ao menos um exigido no service.
       email: {
         type: DataTypes.STRING(180),
-        allowNull: false,
+        allowNull: true,
         unique: true,
         validate: { isEmail: true },
       },
@@ -34,6 +35,7 @@ module.exports = (sequelize, DataTypes) => {
       phone: {
         type: DataTypes.STRING(30),
         allowNull: true,
+        unique: true,
       },
       // Flag de status ativo/inativo (moderação / soft-disable).
       isActive: {
@@ -50,6 +52,7 @@ module.exports = (sequelize, DataTypes) => {
       tableName: 'users',
       indexes: [
         { unique: true, fields: ['email'] },
+        { unique: true, fields: ['phone'] },
         { fields: ['role'] },
         { fields: ['is_active'] },
       ],

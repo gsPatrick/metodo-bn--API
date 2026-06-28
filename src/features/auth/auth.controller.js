@@ -23,8 +23,8 @@ const register = catchAsync(async (req, res) => {
 });
 
 const login = catchAsync(async (req, res) => {
-  const { email, password } = req.body;
-  const result = await authService.login({ email, password }, sessionContext(req));
+  const { email, phone, identifier, password } = req.body;
+  const result = await authService.login({ email, phone, identifier, password }, sessionContext(req));
   return ok(res, result);
 });
 
