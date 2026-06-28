@@ -10,6 +10,12 @@ const nearby = catchAsync(async (req, res) => {
   return ok(res, items, 200, { count: items.length });
 });
 
+// GET /markets/nearest?lat=&lng=  → mercado mais próximo (Google Places)
+const nearest = catchAsync(async (req, res) => {
+  const market = await service.nearestPlace({ lat: req.query.lat, lng: req.query.lng });
+  return ok(res, market);
+});
+
 const list = catchAsync(async (req, res) => {
   const items = await service.listAll();
   return ok(res, items);
@@ -35,4 +41,4 @@ const remove = catchAsync(async (req, res) => {
   return noContent(res);
 });
 
-module.exports = { nearby, list, getById, create, update, remove };
+module.exports = { nearby, nearest, list, getById, create, update, remove };

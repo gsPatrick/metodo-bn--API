@@ -8,8 +8,9 @@ const router = Router();
 
 router.use(authenticate);
 
-// Busca por proximidade (rota específica antes de /:id).
+// Busca por proximidade (rotas específicas antes de /:id).
 router.get('/nearby', controller.nearby);
+router.get('/nearest', controller.nearest); // mercado mais próximo via Google Places
 
 // Cadastro (qualquer autenticado pode registrar um mercado).
 router.post('/', controller.create);

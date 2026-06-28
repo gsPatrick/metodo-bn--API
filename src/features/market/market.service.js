@@ -6,6 +6,47 @@ const { Market, sequelize } = require('../../models');
 const AppError = require('../../utils/app-error');
 const { ROLES } = require('../../config/constants');
 const { buildDeepLinks } = require('./market.helper');
+const env = require('../../config/env');
+
+// Mercado mais próximo via Google Places (New) — Nearby Search, ranqueado por distância.
+async function nearestPlace({ lat, lng }) {
+  const key = env.GOOGLE_MAPS_API_KEY;
+  if (!key) throw AppError.badRequest('GOOGLE_MAPS_API_KEY não configurada.', 'NO_GOOGLE_KEY');
+  const latN = Number(lat);
+  const lngN = Number(lng);
+  if (Number.isNaN(latN) || Number.isNaN(lngN)) {
+    throw AppError.badRequest('lat e lng são obrigatórios.', 'INVALID_COORDS');
+  }
+  const res = await fetch('https://places.googleapis.com/v1/places:searchNearby', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Goog-Api-Key': key,
+      'X-Goog-FieldMask': 'places.displayName,places.location,places.formattedAddress,places.primaryType',
+    },
+    body: JSON.stringify({
+      includedTypes: ['supermarket', 'grocery_store', 'convenience_store'],
+      maxResultCount: 10,
+      rankPreference: 'DISTANCE',
+      languageCode: 'pt-BR',
+      locationRestriction: { circle: { center: { latitude: latN, longitude: lngN }, radius: 50000 } },
+    }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const msg = (data && data.error && data.error.message) || 'Falha na busca do Google Places.';
+    throw new AppError(msg, 502, 'GOOGLE_PLACES_ERROR');
+  }
+  const places = data.places || [];
+  if (!places.length) return null;
+  const p = places[0]; // já vem ordenado por distância
+  return {
+    name: (p.displayName && p.displayName.text) || 'Mercado',
+    address: p.formattedAddress || null,
+    lat: p.location && p.location.latitude,
+    lng: p.location && p.location.longitude,
+  };
+}
 
 // Anexa os deep-links de navegação ao objeto do mercado.
 function withLinks(market) {
@@ -115,4 +156,4 @@ async function remove(actor, id) {
   return { deleted: true };
 }
 
-module.exports = { searchNearby, listAll, getById, create, update, remove };
+module.exports = { searchNearby, nearestPlace, listAll, getById, create, update, remove };

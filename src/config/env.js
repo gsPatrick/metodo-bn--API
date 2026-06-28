@@ -83,6 +83,9 @@ const env = {
   DEFAULT_NUTRI_NAME: process.env.DEFAULT_NUTRI_NAME || 'Nutricionista Beatriz Nascimento',
   DEFAULT_NUTRI_EMAIL: process.env.DEFAULT_NUTRI_EMAIL || '',
   DEFAULT_NUTRI_PASSWORD: process.env.DEFAULT_NUTRI_PASSWORD || '',
+
+  // Google Maps / Places (busca do mercado mais próximo).
+  GOOGLE_MAPS_API_KEY: process.env.GOOGLE_MAPS_API_KEY || '',
 };
 
 module.exports = env;
