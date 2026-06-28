@@ -301,6 +301,7 @@ async function addMealItem(actor, mealId, data) {
     quantity: data.quantity ?? 0,
     unit: data.unit ?? 'g',
     quantityLabel: data.quantityLabel ?? null,
+    substitutions: data.substitutions ?? null,
     kcal: data.kcal ?? 0,
     carbsG: data.carbsG ?? 0,
     proteinG: data.proteinG ?? 0,
@@ -324,7 +325,7 @@ async function loadEditableItem(actor, itemId) {
 
 async function updateMealItem(actor, itemId, data) {
   const item = await loadEditableItem(actor, itemId);
-  ['foodId', 'customFoodName', 'quantity', 'unit', 'quantityLabel', 'kcal', 'carbsG', 'proteinG', 'fatG', 'sortOrder', 'notes'].forEach((f) => {
+  ['foodId', 'customFoodName', 'quantity', 'unit', 'quantityLabel', 'substitutions', 'kcal', 'carbsG', 'proteinG', 'fatG', 'sortOrder', 'notes'].forEach((f) => {
     if (data[f] !== undefined) item[f] = data[f];
   });
   // Não pode ficar sem referência (alimento ou texto livre).
