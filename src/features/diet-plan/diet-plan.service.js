@@ -255,6 +255,40 @@ async function removeMeal(actor, mealId) {
   return { deleted: true };
 }
 
+// Calcula os macros do item a partir do alimento (foodId) × quantidade em gramas.
+async function computeItemMacros(item) {
+  if (!item.foodId) return; // item de texto livre mantém os macros informados
+  const food = await Food.findByPk(item.foodId);
+  if (!food) return;
+  const grams = Number(item.quantity) || 0;
+  const factor = grams / 100;
+  const r2 = (v) => Math.round((Number(v) || 0) * factor * 100) / 100;
+  item.kcal = r2(food.kcal);
+  item.carbsG = r2(food.carbsG);
+  item.proteinG = r2(food.proteinG);
+  item.fatG = r2(food.fatG);
+  if (!item.quantityLabel) item.quantityLabel = `${grams} g`;
+}
+
+// Recalcula os totais da refeição somando os itens.
+async function recomputeMealTotals(mealId) {
+  const items = await MealItem.findAll({ where: { mealId } });
+  const sum = items.reduce(
+    (a, it) => ({
+      kcal: a.kcal + (Number(it.kcal) || 0),
+      carbsG: a.carbsG + (Number(it.carbsG) || 0),
+      proteinG: a.proteinG + (Number(it.proteinG) || 0),
+      fatG: a.fatG + (Number(it.fatG) || 0),
+    }),
+    { kcal: 0, carbsG: 0, proteinG: 0, fatG: 0 },
+  );
+  const r = (v) => Math.round(v * 100) / 100;
+  await Meal.update(
+    { kcal: r(sum.kcal), carbsG: r(sum.carbsG), proteinG: r(sum.proteinG), fatG: r(sum.fatG) },
+    { where: { id: mealId } },
+  );
+}
+
 async function addMealItem(actor, mealId, data) {
   const meal = await loadEditableMeal(actor, mealId);
   if (!data.foodId && !data.customFoodName) {
@@ -266,9 +300,17 @@ async function addMealItem(actor, mealId, data) {
     customFoodName: data.customFoodName ?? null,
     quantity: data.quantity ?? 0,
     unit: data.unit ?? 'g',
+    quantityLabel: data.quantityLabel ?? null,
+    kcal: data.kcal ?? 0,
+    carbsG: data.carbsG ?? 0,
+    proteinG: data.proteinG ?? 0,
+    fatG: data.fatG ?? 0,
     sortOrder: data.sortOrder ?? 0,
     notes: data.notes ?? null,
   });
+  await computeItemMacros(item); // sobrescreve com base no alimento, se houver foodId
+  await item.save();
+  await recomputeMealTotals(meal.id);
   if (item.foodId) await foodService.incrementUsage([item.foodId]).catch(() => {});
   return item;
 }
@@ -282,21 +324,25 @@ async function loadEditableItem(actor, itemId) {
 
 async function updateMealItem(actor, itemId, data) {
   const item = await loadEditableItem(actor, itemId);
-  ['foodId', 'customFoodName', 'quantity', 'unit', 'sortOrder', 'notes'].forEach((f) => {
+  ['foodId', 'customFoodName', 'quantity', 'unit', 'quantityLabel', 'kcal', 'carbsG', 'proteinG', 'fatG', 'sortOrder', 'notes'].forEach((f) => {
     if (data[f] !== undefined) item[f] = data[f];
   });
   // Não pode ficar sem referência (alimento ou texto livre).
   if (!item.foodId && !item.customFoodName) {
     throw AppError.badRequest('Item requer foodId ou customFoodName.', 'MISSING_FIELDS');
   }
+  await computeItemMacros(item); // recalcula com base no alimento × quantidade, se houver foodId
   await item.save();
+  await recomputeMealTotals(item.mealId);
   if (item.foodId) await foodService.incrementUsage([item.foodId]).catch(() => {});
   return item;
 }
 
 async function removeMealItem(actor, itemId) {
   const item = await loadEditableItem(actor, itemId);
+  const { mealId } = item;
   await item.destroy();
+  await recomputeMealTotals(mealId);
   return { deleted: true };
 }
 
