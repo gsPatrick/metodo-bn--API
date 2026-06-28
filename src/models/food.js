@@ -22,6 +22,9 @@ module.exports = (sequelize, DataTypes) => {
       fiberG: { type: DataTypes.DECIMAL(8, 2), allowNull: false, defaultValue: 0 },
       sodiumMg: { type: DataTypes.DECIMAL(8, 2), allowNull: false, defaultValue: 0 },
 
+      // Medidas caseiras oficiais (POF/IBGE): [{ label, grams }].
+      householdMeasures: { type: DataTypes.JSONB, allowNull: false, defaultValue: [] },
+
       // --- Customização por nutricionista ---
       isCustom: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
       createdByNutritionistId: { type: DataTypes.UUID, allowNull: true },

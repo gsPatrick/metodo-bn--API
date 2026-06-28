@@ -55,13 +55,14 @@ async function bootstrap() {
     // Garante a nutricionista padrão (idempotente). Não derruba o boot se falhar.
     await ensureDefaultNutritionist().catch((e) => console.error('[seed] Falha ao criar nutri padrão:', e.message));
 
-    // Popula o catálogo de alimentos (TACO/TBCA) na primeira subida (idempotente).
-    await ensureFoodCatalog().catch((e) => console.error('[seed] Falha ao semear alimentos:', e.message));
-
     // Bind explícito em 0.0.0.0 para aceitar conexões do proxy (EasyPanel/Docker).
     server.listen(env.PORT, '0.0.0.0', () => {
       console.log(`[http] API ouvindo em 0.0.0.0:${env.PORT}${env.API_PREFIX} (NODE_ENV=${env.NODE_ENV})`);
     });
+
+    // Catálogo de alimentos (TACO/TBCA + medidas caseiras) em background, sem
+    // bloquear o boot/healthcheck (o backfill de medidas pode demorar).
+    ensureFoodCatalog().catch((e) => console.error('[seed] Falha ao semear alimentos:', e.message));
   } catch (err) {
     console.error('[boot] Falha ao iniciar a aplicação:', err);
     process.exit(1);
