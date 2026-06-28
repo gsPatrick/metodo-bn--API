@@ -16,6 +16,7 @@ const notFoundHandler = require('./src/middlewares/not-found.middleware');
 const { initSocket } = require('./src/providers/websocket/socket-server');
 const { sequelize } = require('./src/models');
 const { ensureDefaultNutritionist } = require('./src/bootstrap/ensure-default-user');
+const { ensureFoodCatalog } = require('./src/bootstrap/ensure-food-catalog');
 
 const app = express();
 
@@ -53,6 +54,9 @@ async function bootstrap() {
 
     // Garante a nutricionista padrão (idempotente). Não derruba o boot se falhar.
     await ensureDefaultNutritionist().catch((e) => console.error('[seed] Falha ao criar nutri padrão:', e.message));
+
+    // Popula o catálogo de alimentos (TACO/TBCA) na primeira subida (idempotente).
+    await ensureFoodCatalog().catch((e) => console.error('[seed] Falha ao semear alimentos:', e.message));
 
     // Bind explícito em 0.0.0.0 para aceitar conexões do proxy (EasyPanel/Docker).
     server.listen(env.PORT, '0.0.0.0', () => {
