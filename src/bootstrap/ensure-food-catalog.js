@@ -22,18 +22,19 @@ async function seedSource({ source, file }) {
   }
   if (!Array.isArray(foods) || !foods.length) return { source, empty: true };
 
+  const n0 = (v) => (v == null || Number.isNaN(Number(v)) ? 0 : Number(v)); // colunas são NOT NULL (default 0)
   const rows = foods
     .filter((f) => f && f.name)
     .map((f) => ({
       name: String(f.name).slice(0, 180),
       source,
       category: f.category ? String(f.category).slice(0, 80) : null,
-      kcal: f.kcal,
-      carbsG: f.carbsG,
-      proteinG: f.proteinG,
-      fatG: f.fatG,
-      fiberG: f.fiberG,
-      sodiumMg: f.sodiumMg,
+      kcal: n0(f.kcal),
+      carbsG: n0(f.carbsG),
+      proteinG: n0(f.proteinG),
+      fatG: n0(f.fatG),
+      fiberG: n0(f.fiberG),
+      sodiumMg: n0(f.sodiumMg),
       isCustom: false,
       isActive: true,
       usageCount: 0,
