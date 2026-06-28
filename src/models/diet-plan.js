@@ -31,6 +31,8 @@ module.exports = (sequelize, DataTypes) => {
       approvedAt: { type: DataTypes.DATE, allowNull: true },
       startDate: { type: DataTypes.DATEONLY, allowNull: true },
       endDate: { type: DataTypes.DATEONLY, allowNull: true },
+      // Lista de compras (nomes de produtos) extraída na importação do plano.
+      shoppingItems: { type: DataTypes.JSONB, allowNull: true },
     },
     {
       tableName: 'diet_plans',
